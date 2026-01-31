@@ -1,0 +1,50 @@
+from openai import AzureOpenAI
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from azure.core.credentials import AzureKeyCredential
+
+# Configuração do Azure Document Intelligence
+form_recognizer_endpoint = "https://endpoint.cognitiveservices.azure.com/"
+form_recognizer_key = "SUA_CHAVE"
+
+document_client = DocumentAnalysisClient(
+    endpoint=form_recognizer_endpoint,
+    credential=AzureKeyCredential(form_recognizer_key)
+)
+
+# Analisar documento
+with open("fatura.pdf", "rb") as f:
+    poller = document_client.begin_analyze_document("prebuilt-invoice", document=f)
+    result = poller.result()
+
+# Extrair campos relevantes
+dados_extraidos = {}
+for doc in result.documents:
+    for name, field in doc.fields.items():
+        dados_extraidos[name] = field.value
+
+# Conectar ao Azure OpenAI para análise contextual
+client = AzureOpenAI(
+    api_key="chaveopenia",
+    api_version="2024-10-01-preview",
+    azure_endpoint="https://endpoint.openai.azure.com/"
+)
+
+prompt = f"""
+Você é um auditor especializado em fraude documental.
+Analise os seguintes dados extraídos de uma fatura e identifique possíveis inconsistências ou sinais de fraude:
+
+{dados_extraidos}
+"""
+
+resposta = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": "Você é um auditor especializado em segurança documental."},
+        {"role": "user", "content": prompt}
+    ],
+    temperature=0.2,
+    max_tokens=800
+)
+
+print("Análise de fraude:")
+print(resposta.choices[0].message.content)
