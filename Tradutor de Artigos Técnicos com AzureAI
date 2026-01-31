@@ -1,0 +1,38 @@
+from openai import AzureOpenAI
+
+# Configuração da conexão com Azure OpenAI
+client = AzureOpenAI(
+    api_key="SUA_CHAVE_DE_API",
+    api_version="2024-10-01-preview",  # ajuste conforme versão disponível
+    azure_endpoint="https://SEU-ENDPOINT.openai.azure.com/"
+)
+
+# Texto técnico de exemplo
+texto_tecnico = """
+O protocolo TCP/IP é fundamental para a comunicação entre sistemas em redes distribuídas.
+Ele define regras para transmissão de pacotes, controle de erros e gerenciamento de conexões.
+"""
+
+# Prompt para tradução com foco em precisão terminológica
+prompt = f"""
+Você é um tradutor especializado em artigos técnicos.
+Traduza o texto abaixo para inglês, mantendo precisão terminológica e contexto técnico:
+
+Texto:
+{texto_tecnico}
+"""
+
+# Chamada ao modelo
+resposta = client.chat.completions.create(
+    model="gpt-4",  # ou o modelo que você configurou no Azure
+    messages=[
+        {"role": "system", "content": "Você é um tradutor técnico especializado em TI e engenharia."},
+        {"role": "user", "content": prompt}
+    ],
+    temperature=0.2,  # baixa temperatura para maior consistência terminológica
+    max_tokens=800
+)
+
+# Exibir tradução
+print("Tradução técnica:")
+print(resposta.choices[0].message.content)
